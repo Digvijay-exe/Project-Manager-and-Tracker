@@ -1,0 +1,6 @@
+{
+  "name": "PIP-OS",
+  "description": "Project Survival Protocol — Retro-futuristic terminal for software project management, risk control, and survival simulation.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

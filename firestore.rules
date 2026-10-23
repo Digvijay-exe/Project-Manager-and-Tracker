@@ -1,0 +1,147 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidTimestamp(val) {
+      return val is timestamp && val <= request.time;
+    }
+
+    // 1. Project Validation
+    function isValidProject(data, userId) {
+      return data.size() >= 6 && data.size() <= 10 &&
+        data.id is string && data.id.size() > 0 &&
+        data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+        data.status in ['ACTIVE', 'IN_PROGRESS', 'ON_HOLD', 'COMPLETED', 'ARCHIVED'] &&
+        data.userId == userId &&
+        isValidTimestamp(data.createdAt) &&
+        isValidTimestamp(data.updatedAt) &&
+        (!('description' in data) || (data.description is string && data.description.size() <= 1000)) &&
+        (!('startDate' in data) || data.startDate is number) &&
+        (!('deadlineDate' in data) || data.deadlineDate == null || data.deadlineDate is number) &&
+        (!('budget' in data) || data.budget == null || data.budget is number);
+    }
+
+    // 2. Task Validation
+    function isValidTask(data, userId) {
+      return data.size() >= 8 && data.size() <= 12 &&
+        data.id is string && data.id.size() > 0 &&
+        data.projectId is string && data.projectId.size() > 0 &&
+        data.title is string && data.title.size() > 0 && data.title.size() <= 150 &&
+        data.status in ['TODO', 'IN_PROGRESS', 'BLOCKED', 'DONE'] &&
+        data.priority in ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] &&
+        data.userId == userId &&
+        isValidTimestamp(data.createdAt) &&
+        isValidTimestamp(data.updatedAt) &&
+        (!('description' in data) || (data.description is string && data.description.size() <= 1000)) &&
+        (!('isReleaseBlocker' in data) || data.isReleaseBlocker is bool) &&
+        (!('dueDate' in data) || data.dueDate == null || data.dueDate is number) &&
+        (!('assignedMemberId' in data) || data.assignedMemberId == null || data.assignedMemberId is string);
+    }
+
+    // 3. Risk Validation
+    function isValidRisk(data, userId) {
+      return data.size() >= 8 && data.size() <= 12 &&
+        data.id is string && data.id.size() > 0 &&
+        data.projectId is string && data.projectId.size() > 0 &&
+        data.title is string && data.title.size() > 0 && data.title.size() <= 150 &&
+        data.likelihood is int && data.likelihood >= 1 && data.likelihood <= 5 &&
+        data.impact is int && data.impact >= 1 && data.impact <= 5 &&
+        data.status in ['OPEN', 'MITIGATING', 'RESOLVED', 'ACCEPTED'] &&
+        data.userId == userId &&
+        isValidTimestamp(data.createdAt) &&
+        isValidTimestamp(data.updatedAt) &&
+        (!('description' in data) || (data.description is string && data.description.size() <= 1000)) &&
+        (!('mitigationPlan' in data) || (data.mitigationPlan is string && data.mitigationPlan.size() <= 1000)) &&
+        (!('ownerMemberId' in data) || data.ownerMemberId == null || data.ownerMemberId is string);
+    }
+
+    // 4. Milestone Validation
+    function isValidMilestone(data, userId) {
+      return data.size() >= 7 && data.size() <= 9 &&
+        data.id is string && data.id.size() > 0 &&
+        data.projectId is string && data.projectId.size() > 0 &&
+        data.title is string && data.title.size() > 0 && data.title.size() <= 150 &&
+        data.targetDate is number &&
+        data.status in ['PENDING', 'IN_PROGRESS', 'COMPLETED'] &&
+        data.userId == userId &&
+        isValidTimestamp(data.createdAt) &&
+        (!('description' in data) || (data.description is string && data.description.size() <= 1000));
+    }
+
+    // 5. Team Member Validation
+    function isValidTeamMember(data, userId) {
+      return data.size() >= 5 && data.size() <= 7 &&
+        data.id is string && data.id.size() > 0 &&
+        data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+        data.role is string && data.role.size() > 0 && data.role.size() <= 100 &&
+        data.userId == userId &&
+        isValidTimestamp(data.createdAt) &&
+        (!('email' in data) || (data.email is string && data.email.size() <= 150));
+    }
+
+    match /users/{userId} {
+      match /projects/{projectId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidProject(request.resource.data, userId);
+        allow update: if isOwner(userId) && isValidProject(request.resource.data, userId) &&
+          request.resource.data.id == resource.data.id &&
+          request.resource.data.userId == resource.data.userId &&
+          request.resource.data.createdAt == resource.data.createdAt;
+        allow delete: if isOwner(userId);
+      }
+
+      match /tasks/{taskId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidTask(request.resource.data, userId);
+        allow update: if isOwner(userId) && isValidTask(request.resource.data, userId) &&
+          request.resource.data.id == resource.data.id &&
+          request.resource.data.userId == resource.data.userId &&
+          request.resource.data.createdAt == resource.data.createdAt;
+        allow delete: if isOwner(userId);
+      }
+
+      match /risks/{riskId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidRisk(request.resource.data, userId);
+        allow update: if isOwner(userId) && isValidRisk(request.resource.data, userId) &&
+          request.resource.data.id == resource.data.id &&
+          request.resource.data.userId == resource.data.userId &&
+          request.resource.data.createdAt == resource.data.createdAt;
+        allow delete: if isOwner(userId);
+      }
+
+      match /milestones/{milestoneId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidMilestone(request.resource.data, userId);
+        allow update: if isOwner(userId) && isValidMilestone(request.resource.data, userId) &&
+          request.resource.data.id == resource.data.id &&
+          request.resource.data.userId == resource.data.userId &&
+          request.resource.data.createdAt == resource.data.createdAt;
+        allow delete: if isOwner(userId);
+      }
+
+      match /team_members/{memberId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidTeamMember(request.resource.data, userId);
+        allow update: if isOwner(userId) && isValidTeamMember(request.resource.data, userId) &&
+          request.resource.data.id == resource.data.id &&
+          request.resource.data.userId == resource.data.userId &&
+          request.resource.data.createdAt == resource.data.createdAt;
+        allow delete: if isOwner(userId);
+      }
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

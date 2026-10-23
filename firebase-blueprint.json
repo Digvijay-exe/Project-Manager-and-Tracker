@@ -1,0 +1,114 @@
+{
+  "entities": {
+    "Project": {
+      "title": "Project",
+      "description": "Software project workspace record managed by the user.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "status": { "type": "string", "enum": ["ACTIVE", "IN_PROGRESS", "ON_HOLD", "COMPLETED", "ARCHIVED"] },
+        "startDate": { "type": "number" },
+        "deadlineDate": { "type": "number" },
+        "budget": { "type": "number" },
+        "userId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "name", "status", "userId", "createdAt", "updatedAt"]
+    },
+    "Task": {
+      "title": "Task",
+      "description": "Project task item with priority, status, and assignment.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "projectId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "status": { "type": "string", "enum": ["TODO", "IN_PROGRESS", "BLOCKED", "DONE"] },
+        "priority": { "type": "string", "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"] },
+        "isReleaseBlocker": { "type": "boolean" },
+        "dueDate": { "type": "number" },
+        "assignedMemberId": { "type": "string" },
+        "userId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "projectId", "title", "status", "priority", "userId", "createdAt", "updatedAt"]
+    },
+    "Risk": {
+      "title": "Risk",
+      "description": "Project threat assessment with likelihood, impact, and mitigation plan.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "projectId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "likelihood": { "type": "integer" },
+        "impact": { "type": "integer" },
+        "mitigationPlan": { "type": "string" },
+        "ownerMemberId": { "type": "string" },
+        "status": { "type": "string", "enum": ["OPEN", "MITIGATING", "RESOLVED", "ACCEPTED"] },
+        "userId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "projectId", "title", "likelihood", "impact", "status", "userId", "createdAt", "updatedAt"]
+    },
+    "Milestone": {
+      "title": "Milestone",
+      "description": "Schedule milestone deliverable target.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "projectId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "targetDate": { "type": "number" },
+        "status": { "type": "string", "enum": ["PENDING", "IN_PROGRESS", "COMPLETED"] },
+        "userId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "projectId", "title", "targetDate", "status", "userId", "createdAt"]
+    },
+    "TeamMember": {
+      "title": "TeamMember",
+      "description": "Personnel roster item for assignment.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "role": { "type": "string" },
+        "email": { "type": "string" },
+        "userId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "name", "role", "userId", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/projects/{projectId}": {
+      "schema": "Project",
+      "description": "Stores user projects."
+    },
+    "/users/{userId}/tasks/{taskId}": {
+      "schema": "Task",
+      "description": "Stores user project tasks."
+    },
+    "/users/{userId}/risks/{riskId}": {
+      "schema": "Risk",
+      "description": "Stores user project risk entries."
+    },
+    "/users/{userId}/milestones/{milestoneId}": {
+      "schema": "Milestone",
+      "description": "Stores user project milestones."
+    },
+    "/users/{userId}/team_members/{memberId}": {
+      "schema": "TeamMember",
+      "description": "Stores user project team members."
+    }
+  }
+}
